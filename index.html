@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quiz App</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f0f0f0;
+        color: #fff;
+      }
+
+      /* Container styles */
+      .container {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #5b48488a;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Heading styles */
+      h1 {
+        font-size: 24px;
+        margin-bottom: 20px;
+        color: #007bff;
+      }
+
+      /* Form styles */
+      #loginForm {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      #loginForm input[type="text"],
+      #loginForm input[type="password"] {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-sizing: border-box;
+        font-size: 16px;
+      }
+
+      #loginForm button {
+        width: 100%;
+        padding: 10px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s ease;
+      }
+
+      #loginForm button:hover {
+        background-color: #0056b3;
+      }
+
+      .btn {
+        display: inline-block;
+        padding: 10px 20px;
+        margin-top: 10px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background-color 0.3s ease;
+      }
+      .btn:hover {
+        background-color: #0056b3;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+      th,
+      td {
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+        text-align: left;
+      }
+      th {
+        background-color: #007bff;
+        color: #fff;
+      }
+      .options {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-gap: 10px;
+      }
+      .options label {
+        display: block;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+      .options label:hover {
+        background-color: #292121;
+      }
+      .options input[type="radio"] {
+        display: none;
+      }
+      .options input[type="radio"] + label {
+        transition: border-color 0.3s ease;
+      }
+      .options input[type="radio"]:checked + label {
+        border-color: #007bff;
+        background-color: #007bff;
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body id="body">
+    <div class="container" id="loginForm">
+      <h1>Welcome to the Quiz App</h1>
+      <input type="text" id="username" placeholder="Username" />
+      <input type="password" id="password" placeholder="Password" />
+      <button class="btn" onclick="login()">Login</button>
+    </div>
+
+    <div class="container" id="quizButtonsContainer" style="display: none">
+      <h1>Welcome to the Quiz App</h1>
+      <button class="btn" onclick="startQuiz(0)">Start Quiz 1</button>
+      <button class="btn" onclick="startQuiz(1)">Start Quiz 2</button>
+    </div>
+
+    <div class="container" id="quizContainer" style="display: none">
+      <h1 id="quizName"></h1>
+      <div id="questionContainer" class="options"></div>
+      <button class="btn" id="nextButton">Next</button>
+    </div>
+
+    <div class="container" id="resultContainer" style="display: none">
+      <h1>Quiz Result</h1>
+      <p id="score"></p>
+      <button class="btn" id="leaderboardButton">Leaderboard</button>
+    </div>
+
+    <div class="container" id="leaderboardContainer" style="display: none">
+      <h1>Leaderboard</h1>
+      <p>Your Name: <span id="leaderboardName"></span></p>
+      <table id="leaderboardTable">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Name</th>
+            <th>Score</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboardBody"></tbody>
+      </table>
+      <div class="container" id="logoutContainer">
+        <button class="btn" onclick="logout()">Logout</button>
+      </div>
+      <button class="btn" id="restartButton">Restart Quiz</button>
+    </div>
+
+    <script>
+      var users = {
+        user1: "password1",
+        user2: "password2",
+        tanvi: "tanvi",
+      };
+
+      var isLoggedIn = false; // Flag to track user login status
+
+      // Function to perform login
+      function login() {
+        var username = document.getElementById("username").value;
+        var password = document.getElementById("password").value;
+
+        if (users[username] && users[username] === password) {
+          // Successful login
+          document.getElementById("loginForm").style.display = "none";
+          document.getElementById("quizButtonsContainer").style.display =
+            "block";
+          document.getElementById("leaderboardContainer").style.display =
+            "none";
+          isLoggedIn = true; // Update login status
+        } else {
+          // Failed login
+          alert("Invalid username or password.");
+        }
+      }
+
+      // Function to perform logout
+      function logout() {
+        document.getElementById("quizButtonsContainer").style.display = "none";
+        document.getElementById("leaderboardContainer").style.display = "none";
+        document.getElementById("loginForm").style.display = "block";
+        leaderboardData = {};
+        isLoggedIn = false; // Update login status
+      }
+      // Global variables
+      var username = "";
+      var currentQuizIndex = 0;
+      var currentQuestionIndex = 0;
+      var score = 0;
+      var selectedOption = null;
+      var leaderboardData = {}; // Object to store leaderboard data
+
+      // Quiz data
+      var quizzes = [
+        {
+          name: "Quiz 1",
+          questions: [
+            {
+              question: "What is the capital of France?",
+              options: ["Paris", "London", "Berlin", "Madrid"],
+              answer: "Paris",
+            },
+            {
+              question: "What is 2 + 2?",
+              options: ["3", "4", "5", "6"],
+              answer: "4",
+            },
+            {
+              question: "Which planet is known as the Red Planet?",
+              options: ["Venus", "Mars", "Jupiter", "Saturn"],
+              answer: "Mars",
+            },
+            {
+              question: "Who wrote 'To Kill a Mockingbird'?",
+              options: [
+                "Harper Lee",
+                "Stephen King",
+                "J.K. Rowling",
+                "Mark Twain",
+              ],
+              answer: "Harper Lee",
+            },
+            {
+              question: "What is the chemical symbol for water?",
+              options: ["H2O", "CO2", "O2", "NaCl"],
+              answer: "H2O",
+            },
+          ],
+        },
+        {
+          name: "Quiz 2",
+          questions: [
+            {
+              question: "Which country won the FIFA World Cup in 2018?",
+              options: ["Germany", "Brazil", "Argentina", "France"],
+              answer: "France",
+            },
+            {
+              question: "Who painted the Mona Lisa?",
+              options: [
+                "Vincent van Gogh",
+                "Pablo Picasso",
+                "Leonardo da Vinci",
+                "Claude Monet",
+              ],
+              answer: "Leonardo da Vinci",
+            },
+            {
+              question: "What is the largest mammal in the world?",
+              options: ["Elephant", "Blue Whale", "Giraffe", "Hippopotamus"],
+              answer: "Blue Whale",
+            },
+            {
+              question: "Which gas do plants absorb for photosynthesis?",
+              options: ["Oxygen", "Carbon Dioxide", "Nitrogen", "Hydrogen"],
+              answer: "Carbon Dioxide",
+            },
+            {
+              question: "What is the currency of Japan?",
+              options: ["Yuan", "Yen", "Rupee", "Dollar"],
+              answer: "Yen",
+            },
+            {
+              question: "Who is the author of 'The Great Gatsby'?",
+              options: [
+                "F. Scott Fitzgerald",
+                "Ernest Hemingway",
+                "John Steinbeck",
+                "J.D. Salinger",
+              ],
+              answer: "F. Scott Fitzgerald",
+            },
+          ],
+        },
+      ];
+
+      // DOM elements
+      var quizContainer = document.getElementById("quizContainer");
+      var quizNameElement = document.getElementById("quizName");
+      var questionContainer = document.getElementById("questionContainer");
+      var nextButton = document.getElementById("nextButton");
+      var resultContainer = document.getElementById("resultContainer");
+      var leaderboardButton = document.getElementById("leaderboardButton");
+      var restartButton = document.getElementById("restartButton");
+      var leaderboardTable = document.getElementById("leaderboardTable");
+      var leaderboardBody = document.getElementById("leaderboardBody");
+      var leaderboardNameSpan = document.getElementById("leaderboardName");
+      var leaderboardContainer = document.getElementById(
+        "leaderboardContainer"
+      );
+
+      // Function to hide leaderboard on start
+      function hideLeaderboard() {
+        leaderboardContainer.style.display = "none";
+      }
+
+      // Function to display leaderboard on window load
+      window.onload = function () {
+        updateLeaderboard();
+      };
+
+      // Start quiz function
+      function startQuiz(index) {
+        currentQuizIndex = index;
+        currentQuestionIndex = 0;
+        score = 0;
+        selectedOption = null;
+
+        var quiz = quizzes[index];
+        var name = prompt("Please enter your name:");
+        if (name) {
+          username = name;
+          leaderboardNameSpan.textContent = username;
+          quizNameElement.textContent = quiz.name;
+          showQuestion(quiz);
+          document.getElementById("quizContainer").style.display = "block";
+          hideLeaderboard();
+        } else {
+          alert("Name cannot be empty!");
+        }
+      }
+
+      // Show question function
+      function showQuestion(quiz) {
+        var question = quiz.questions[currentQuestionIndex];
+        questionContainer.innerHTML = "";
+        var questionElement = document.createElement("div");
+        questionElement.classList.add("quiz-question");
+        questionElement.textContent = question.question;
+        questionContainer.appendChild(questionElement);
+
+        question.options.forEach(function (option, index) {
+          var optionElement = document.createElement("input");
+          optionElement.type = "radio";
+          optionElement.name = "options";
+          optionElement.value = option;
+          optionElement.id = "option" + (index + 1);
+          optionElement.addEventListener("change", function () {
+            selectedOption = option;
+          });
+          var labelElement = document.createElement("label");
+          labelElement.setAttribute("for", "option" + (index + 1));
+          labelElement.textContent = option;
+          questionContainer.appendChild(optionElement);
+          questionContainer.appendChild(labelElement);
+          questionContainer.appendChild(document.createElement("br"));
+        });
+      }
+
+      // Next button click event
+      nextButton.addEventListener("click", function () {
+        if (selectedOption === null) {
+          alert("Please select an option.");
+          return;
+        }
+
+        var quiz = quizzes[currentQuizIndex];
+        var question = quiz.questions[currentQuestionIndex];
+        if (selectedOption === question.answer) {
+          score++;
+        }
+
+        currentQuestionIndex++;
+        if (currentQuestionIndex < quiz.questions.length) {
+          showQuestion(quiz);
+        } else {
+          showResult();
+        }
+      });
+
+      // Show result function
+      function showResult() {
+        document.getElementById("quizContainer").style.display = "none";
+        resultContainer.style.display = "block";
+        document.getElementById("score").textContent =
+          "Your Score: " +
+          score +
+          "/" +
+          quizzes[currentQuizIndex].questions.length;
+
+        // Add the user's score to the leaderboard data
+        if (!leaderboardData[username]) {
+          leaderboardData[username] = score;
+        } else {
+          // If the user already exists, update their score only if the new score is higher
+          leaderboardData[username] = Math.max(
+            leaderboardData[username],
+            score
+          );
+        }
+
+        // Update the leaderboard display
+        updateLeaderboard();
+      }
+
+      // Update leaderboard function
+      function updateLeaderboard() {
+        // Clear previous leaderboard data
+        leaderboardBody.innerHTML = "";
+
+        // Sort the leaderboard data by score in descending order
+        var sortedLeaderboard = Object.entries(leaderboardData).sort(
+          (a, b) => b[1] - a[1]
+        );
+
+        // Add rank information
+        sortedLeaderboard.forEach(function (entry, index) {
+          var rank = index + 1;
+          var row = document.createElement("tr");
+          var rankCell = document.createElement("td");
+          var nameCell = document.createElement("td");
+          var scoreCell = document.createElement("td");
+          rankCell.textContent = rank;
+          nameCell.textContent = entry[0];
+          scoreCell.textContent =
+            entry[1] + "/" + quizzes[currentQuizIndex].questions.length;
+          row.appendChild(rankCell);
+          row.appendChild(nameCell);
+          row.appendChild(scoreCell);
+          leaderboardBody.appendChild(row);
+        });
+      }
+
+      // Leaderboard button click event
+      leaderboardButton.addEventListener("click", function () {
+        // Show the leaderboard container
+        document.getElementById("resultContainer").style.display = "none";
+        leaderboardContainer.style.display = "block";
+      });
+
+      // Restart quiz button click event
+      restartButton.addEventListener("click", function () {
+        // Hide the leaderboard container
+        leaderboardContainer.style.display = "none";
+        startQuiz(currentQuizIndex);
+      });
+
+      async function setRandomBackgroundImage(elementId, keyword) {
+        const element = document.getElementById(elementId);
+        const accessKey = "uWfrJ5iTDNxMYZ53esF7oQ4yYz7oRwfraxESLsNE7CE"; // Replace with your Unsplash API access key
+        const unsplashURL = `https://api.unsplash.com/search/photos?page=1&query=${encodeURIComponent(
+          keyword
+        )}&client_id=${accessKey}`;
+
+        try {
+          const response = await fetch(unsplashURL);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.results.length > 0) {
+              // Select a random image from the results
+              const randomIndex = Math.floor(
+                Math.random() * data.results.length
+              );
+              const imageUrl = data.results[randomIndex].urls.regular;
+
+              // Set the selected image as the background
+              element.style.backgroundImage = `url(${imageUrl})`;
+              element.style.backgroundSize = "cover"; // Ensures the image covers the entire element
+              element.style.backgroundPosition = "center"; // Centers the background image
+            } else {
+              console.error("No images found for the given keyword.");
+            }
+          } else {
+            console.error(
+              "Failed to fetch images from Unsplash:",
+              response.status,
+              response.statusText
+            );
+          }
+        } catch (error) {
+          console.error("Error fetching image from Unsplash:", error);
+        }
+      }
+
+      // Sample usage of setBackgroundImage function for each car
+      setRandomBackgroundImage("body", "quiz");
+    </script>
+  </body>
+</html>
